@@ -1,66 +1,110 @@
 #include<bits/stdc++.h>
-
-
-#ifdef WIN32
-#endif
 #include <GL/gl.h>
 #include <GL/glut.h>
 
 
 using namespace std;
-
-int totStep = 0;
-int arr[10] ={};
 typedef enum
 {
     MODE_BITMAP,
     MODE_STROKE
 } mode_type;
-
+struct st{
+    double x;
+    double y;
+    double rgb[3];
+    int number;
+};
 static mode_type mode;
 static int font_index1;
+
+int flg = 1, index1=6, action = -1, stopIndex=-1,stat=1;
+
+int grid[3][3] = {{4,3,2},
+                 {7,5,8},
+                 {0,6,1}};
+int totStep = 0;
+int arr[10] ={};
+
+
+double color[9][3] = {{0,0,0},{1,0,1},{1,1,0},{1,0,0},{0,0,1},{0,1,0},{1,1,1},{0,1,1},{0.5,0.3,0.5}};
+double primaryPosition[9][2] = {{-60,-60},{20,-60},{20,20},{-20,20},{-60,20},{-20,-20},{-20,-60},{-60,-20},{20,-20}};
+double Position[9][2] = {{-60,20},{-20,20},{20,20},{-60,-20},{-20,-20},{20,-20},{-60,-60},{-20,-60},{20,-60}};
+double counter = 40;
+typedef struct st blok;
+
+blok bloks[9];
 
 int getNum(vector<int>& v)
 {
  
-    // Size of the vector
     int n = v.size();
- 
-    // Generate a random number
     srand(time(NULL));
- 
-    // Make sure the number is within
-    // the index range
     int index = rand() % n;
- 
-    // Get random number from the vector
     int num = v[index];
- 
-    // Remove the number from the vector
     swap(v[index], v[n - 1]);
     v.pop_back();
- 
-    // Return the removed number
     return num;
 }
  
-// Function to generate n non-repeating random numbers
 void generateRandom(int n)
 {
     vector<int> v(n);
- 
-    // Fill the vector with the values
-    // 1, 2, 3, ..., n
     for (int i = 0; i < n; i++)
         v[i] = i;
- 
-    // While vector has elements
-    // get a random number from the vector and print it
+
     int k=0;
     while (v.size()) {
         arr[k]=getNum(v);
         k++;
     }
+}
+
+void randomize(){
+    generateRandom(9);
+    for(int i=0;i<3;i++){
+        for(int j=0;j<3;j++){
+            grid[i][j]=arr[i*3+j];
+            primaryPosition[grid[i][j]][0]=Position[i*3+j][0];
+            primaryPosition[grid[i][j]][1]=Position[i*3+j][1];
+        }
+    }
+}
+void reset(){
+    for(int i=0;i<3;i++){
+        for(int j=0;j<3;j++){
+            grid[i][j]=arr[i*3+j];
+            primaryPosition[grid[i][j]][0]=Position[i*3+j][0];
+            primaryPosition[grid[i][j]][1]=Position[i*3+j][1];
+        }
+    }
+}
+
+void findZero(int *x, int *y){
+    int flag = 0, i = 0, j = 0;
+    for(i = 0; i < 3; i++){
+        for(j = 0; j < 3; j++){
+            if(grid[i][j] == 0){
+                flag = 1;
+                break;
+            }
+        }
+        if(flag == 1) break;
+    }
+    *x  = i;
+    *y = j;
+}
+
+bool check(){
+    int cnt = 1;
+    for(int i = 0; i < 3; i++){
+        for(int j = 0; j < 3; j++){
+            if(i == 2 && j == 2) break;
+            if(grid[i][j] != cnt) return false;
+            cnt++;
+        }
+    }
+    return true;
 }
 
 void print_stroke_string(void* font, char* s)
@@ -111,25 +155,12 @@ void draw_stuff(int index1,double tx,double ty)
 }
 
 
-struct st{
-    double x;
-    double y;
-    double rgb[3];
-    int number;
-};
 
-int flg = 1, index1=6, action = -1, stopIndex=-1;
-
-int grid[3][3] = {{4,3,2},
-                 {7,5,8},
-                 {0,6,1}};
 void shuffle_array(int arr[], int n)
 {
  
-    // To obtain a time-based seed
     unsigned seed = 0;
  
-    // Shuffling our array
     shuffle(arr, arr + n,
             default_random_engine(seed));
  
@@ -138,44 +169,22 @@ void shuffle_array(int arr[], int n)
         cout << arr[i] << " ";
     cout << endl;
 }
-double color[9][3] = {{0,0,0},{1,0,1},{1,1,0},{1,0,0},{0,0,1},{0,1,0},{1,1,1},{0,1,1},{0.5,0.3,0.5}};
-double primaryPosition[9][2] = {{-60,-60},{20,-60},{20,20},{-20,20},{-60,20},{-20,-20},{-20,-60},{-60,-20},{20,-20}};
-double Position[9][2] = {{-60,20},{-20,20},{20,20},{-60,-20},{-20,-20},{20,-20},{-60,-60},{-20,-60},{20,-60}};
-double counter = 40;
-typedef struct st blok;
-
-blok bloks[9];
-
-void findZero(int *x, int *y){
-    int flag = 0, i = 0, j = 0;
-    for(i = 0; i < 3; i++){
-        for(j = 0; j < 3; j++){
-            if(grid[i][j] == 0){
-                flag = 1;
-                break;
-            }
-        }
-        if(flag == 1) break;
-    }
-    *x  = i;
-    *y = j;
-}
 
 
 
 void drawGrid(){
     int i;
 
-    glColor3f(1, 1, 1);//gray
+    glColor3f(1, 1, 1);
 
     glBegin(GL_LINES);{
 
         for(int i = -60;i <= 60; i+=40){
-            //lines parallel to X-axis
+            
             glVertex3f(-60, i, 0);
             glVertex3f(60, i, 0);
 
-            //lines parallel to Y-axis
+
             glVertex3f(i, -60, 0);
             glVertex3f(i, 60, 0);
         }
@@ -197,62 +206,29 @@ void drawSquare(double x,double y,double r,double g,double b){
 
 }
 
-bool check(){
-    int cnt = 0;
-    for(int i = 0; i < 3; i++){
-        for(int j = 0; j < 3; j++){
-            if(grid[i][j] != cnt) return false;
-            cnt++;
-        }
-    }
-    return true;
-}
+
 
 void display()
 {
 
-    //clear the display
-    //color black
+
     glClearColor(0, 0, 0, 0);
 
-    //clear buffers to preset values
-    //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    /***************************
-    / set-up camera (view) here
-    ****************************/
-
-    //load the correct matrix -- MODEL-VIEW matrix
-    //specify which matrix is the current matrix
     glMatrixMode(GL_MODELVIEW);
-
-    //initialize the matrix
-    //replace the current matrix with the identity matrix [Diagonals have 1, others have 0]
     glLoadIdentity();
 
-    //now give three info
-    //1. where is the camera (viewer)?
-    //2. where is the camera looking?
-    //3. Which direction is the camera's UP direction?
     gluLookAt(0,0,100,  0,0,0,  0,1,0);
 
     glColor3f(0, 1, 0);
-    /*glBegin(GL_QUADS);
-    {
-        glVertex3f(0, 0, 0);
-        glVertex3f(20, 0, 0);
-        glVertex3f(20, 30, 0);
-        glVertex3f(0, 30, 0);
-    }
-    glEnd();*/
+
     if(check()){
-        glColor3f(1.0, 1.0, 1.0);
+        glColor3f(1, 1, 1);
 
         int stroke_scale = 1;
         glPushMatrix();
         {
-            glTranslatef(-60,20,0);
+            glTranslatef(-60,65,0);
             glScalef(0.03, 0.03, 0.2);
             string k1= to_string(totStep);
             string k2= "Congrats, You completed the puzzle in \n" + k1 + "\n steps!";
@@ -261,51 +237,144 @@ void display()
             print_stroke_string(GLUT_STROKE_ROMAN, k3 );
         }
         glPopMatrix();
-    }
-    drawGrid();
-    int temp1 = -60;
-    int temp2 = -60;
-
-    for(int i = 1; i < 10; i++){
-        if(flg == 1){
-            bloks[i - 1].number = grid[(i - 1) / 3][(i - 1) % 3];
-            bloks[i - 1].x = primaryPosition[i - 1][0];
-            bloks[i - 1].y = primaryPosition[i - 1][1];
+        glPushMatrix();
+        {
+            glTranslatef(-60,45,0);
+            glScalef(0.03, 0.03, 0.2);
+            string k2= "Press F1 to replay or F2 to exit";
+            char k3[128]; 
+            strcpy(k3,k2.c_str());
+            print_stroke_string(GLUT_STROKE_ROMAN, k3 );
         }
-        for(int j = 0; j < 3; j++) bloks[i - 1].rgb[j] = color[i - 1][j];
-        if(i - 1 != stopIndex){
-            double inc = 0.05;
+        glPopMatrix();
+    }
+    else if(stat==1){
+        glColor3f(1, 1, 1);
 
-            for(int k = 0; k < 5; k++){
+        int stroke_scale = 1;
+        glPushMatrix();
+        {
+            glTranslatef(-70,65,0);
+            glScalef(0.03, 0.03, 0.2);
+            string k2= "Welcome to 8-Puzzle Game, Press F1 to play or F2 to exit";
+            char k3[128]; 
+            strcpy(k3,k2.c_str());
+            print_stroke_string(GLUT_STROKE_ROMAN, k3 );
+        }
+        glPopMatrix();
+        glPushMatrix();
+        {
+            glTranslatef(-70,55,0);
+            glScalef(0.03, 0.03, 0.2);
+            string k2= "Use arrow keys to move the tiles";
+            char k3[128]; 
+            strcpy(k3,k2.c_str());
+            print_stroke_string(GLUT_STROKE_ROMAN, k3 );
+        }
+        glPopMatrix();
+        glPushMatrix();
+        {
+            glTranslatef(-70,45,0);
+            glScalef(0.03, 0.03, 0.2);
+            string k2= "The aim is to put the numerical pieces at its right place as follows";
+            char k3[128]; 
+            strcpy(k3,k2.c_str());
+            print_stroke_string(GLUT_STROKE_ROMAN, k3 );
+        }
+        glPopMatrix();
+        glPushMatrix();
+        {
+            glTranslatef(-20,35,0);
+            glScalef(0.03, 0.03, 0.2);
+            string k2= "1 2 3";
+            char k3[128]; 
+            strcpy(k3,k2.c_str());
+            print_stroke_string(GLUT_STROKE_ROMAN, k3 );
+        }
+        glPopMatrix();
+        glPushMatrix();
+        {
+            glTranslatef(-20,30,0);
+            glScalef(0.03, 0.03, 0.2);
+            string k2= "4 5 6";
+            char k3[128]; 
+            strcpy(k3,k2.c_str());
+            print_stroke_string(GLUT_STROKE_ROMAN, k3 );
+        }
+        glPopMatrix();
+        glPushMatrix();
+        {
+            glTranslatef(-20,25,0);
+            glScalef(0.03, 0.03, 0.2);
+            string k2= "7 8";
+            char k3[128]; 
+            strcpy(k3,k2.c_str());
+            print_stroke_string(GLUT_STROKE_ROMAN, k3 );
+        }
+        glPopMatrix();
+    }
+    else{
+        drawGrid();
+        int temp1 = -60;
+        int temp2 = -60;
 
-                    if(i == 9) draw_stuff(7, bloks[i - 1].x + 10 + inc, bloks[i - 1].y + 10);
-                    else draw_stuff(i - 2, bloks[i - 1].x + 10 + inc, bloks[i - 1].y + 10);
-                    inc = inc + 0.05;
-
-
+        for(int i = 1; i < 10; i++){
+            if(flg == 1){
+                bloks[i - 1].number = grid[(i - 1) / 3][(i - 1) % 3];
+                bloks[i - 1].x = primaryPosition[i - 1][0];
+                bloks[i - 1].y = primaryPosition[i - 1][1];
             }
-            drawSquare(bloks[i - 1].x,bloks[i - 1].y,bloks[i - 1].rgb[0],bloks[i - 1].rgb[1],bloks[i - 1].rgb[2]);
+            for(int j = 0; j < 3; j++) bloks[i - 1].rgb[j] = color[i - 1][j];
+            if(i - 1 != stopIndex){
+                double inc = 0.05;
+
+                for(int k = 0; k < 5; k++){
+
+                        if(i == 9) draw_stuff(7, bloks[i - 1].x + 10 + inc, bloks[i - 1].y + 10);
+                        else draw_stuff(i - 2, bloks[i - 1].x + 10 + inc, bloks[i - 1].y + 10);
+                        inc = inc + 0.05;
+
+
+                }
+                drawSquare(bloks[i - 1].x,bloks[i - 1].y,bloks[i - 1].rgb[0],bloks[i - 1].rgb[1],bloks[i - 1].rgb[2]);
+            }
         }
+        glColor3f(1, 1, 1);
+
+        int stroke_scale = 1;
+        glPushMatrix();
+        {
+            glTranslatef(-60,-65,0);
+            glScalef(0.03, 0.03, 0.2);
+            string k2= "Press F1 to replay, F2 to exit or F3 to reset";
+            char k3[128]; 
+            strcpy(k3,k2.c_str());
+            print_stroke_string(GLUT_STROKE_ROMAN, k3 );
+        }
+        glPopMatrix();
+
+        glPushMatrix();
+        {
+            glTranslatef(-60,65,0);
+            glScalef(0.03, 0.03, 0.2);
+            string k1= to_string(totStep);
+            string k2= "Steps taken: "+ k1;
+            char k3[128]; 
+            strcpy(k3,k2.c_str());
+            print_stroke_string(GLUT_STROKE_ROMAN, k3 );
+        }
+        glPopMatrix();
+        flg = 0;
     }
-    flg = 0;
 
 
 
 
-
-
-    //drawSquare(-60,-60,1,0,0);
-    //drawSquare(-20,-60,0,0,1);
-
-    //ADD this line in the end --- if you use double buffer (i.e. GL_DOUBLE)
     glutSwapBuffers();
 }
 
 void animate()
 {
-    //codes for any changes in Models, Camera
-
-    //this will call the display AGAIN
     if(flg == 0 && action != -1){
         if(action == 1){
             int limit = bloks[index1].y + counter;
@@ -313,8 +382,8 @@ void animate()
                 int x, y;
                 findZero(&x, &y);
                 stopIndex = grid[x][y];
-                bloks[index1].y += 0.5;
-                counter -= 0.5;
+                bloks[index1].y += 1;
+                counter -= 1;
             }
             if(counter <= 0 ){
                 action = -1;
@@ -333,9 +402,8 @@ void animate()
                 int x, y;
                 findZero(&x, &y);
                 stopIndex = grid[x][y];
-                bloks[index1].y -= 0.5;
-                counter += 0.5;
-                //printf("%d\n",stopIndex);
+                bloks[index1].y -= 1;
+                counter += 1;
             }
             if(counter >= 0 ){
                 action = -1;
@@ -354,8 +422,8 @@ void animate()
                 int x, y;
                 findZero(&x, &y);
                 stopIndex = grid[x][y];
-                bloks[index1].x += 0.5;
-                counter -= 0.5;
+                bloks[index1].x += 1;
+                counter -= 1;
             }
             if(counter <= 0 ){
                 action = -1;
@@ -374,8 +442,8 @@ void animate()
                 int x, y;
                 findZero(&x, &y);
                 stopIndex = grid[x][y];
-                bloks[index1].x -= 0.5;
-                counter += 0.5;
+                bloks[index1].x -= 1;
+                counter += 1;
 
             }
             if(counter >= 0 ){
@@ -390,12 +458,28 @@ void animate()
         glutPostRedisplay();
 
     }
+    glutPostRedisplay();
 
 }
 
 void specialKeyListener(int key, int x, int y)
 {
-    if (key == GLUT_KEY_UP && action == -1){
+    if(key==GLUT_KEY_F1){
+        stat=0;
+        randomize();
+        flg=1;
+        totStep=0;
+    }
+    else if(key==GLUT_KEY_F2){
+        exit(0);
+    }
+    else if(key==GLUT_KEY_F3){
+        stat=0;
+        flg=1;
+        reset();
+        totStep=0;
+    }
+    else if (key == GLUT_KEY_UP && action == -1){
         int x, y;
         findZero(&x, &y);
         if(x < 2){
@@ -451,27 +535,13 @@ void init()
 {
     mode = MODE_STROKE;
     font_index1 = 1;
-    //clear the screen
+
     glClearColor(0, 0, 0, 0);
 
-    /************************
-    / set-up projection here
-    ************************/
-
-    //load the PROJECTION matrix
     glMatrixMode(GL_PROJECTION);
 
-    //initialize the matrix
     glLoadIdentity();
 
-    /*
-    gluPerspective() — set up a perspective projection matrix
-
-    fovy -         Specifies the field of view angle, in degrees, in the y direction.
-    aspect ratio - Specifies the aspect ratio that determines the field of view in the x direction. The aspect ratio is the ratio of x (width) to y (height).
-    zNear -        Specifies the distance from the viewer to the near clipping plane (always positive).
-    zFar  -        Specifies the distance from the viewer to the far clipping plane (always positive).
-    */
 
     gluPerspective(70, 1, 0.1, 10000.0);
 
@@ -483,43 +553,29 @@ void init()
 
 int main(int argc, char **argv)
 {
-    generateRandom(9);
-    for(int i=0;i<3;i++){
-        for(int j=0;j<3;j++){
-            grid[i][j]=arr[i*3+j];
-            primaryPosition[grid[i][j]][0]=Position[i*3+j][0];
-            primaryPosition[grid[i][j]][1]=Position[i*3+j][1];
-        }
-    }
+
     glutInit(&argc, argv);
 
     glutInitWindowSize(1000, 750);
     glutInitWindowPosition(0, 0);
 
-    /*
-    glutInitDisplayMode - inits display mode
-    GLUT_DOUBLE - allows for display on the double buffer window
-    GLUT_RGBA - shows color (Red, green, blue) and an alpha
-    GLUT_DEPTH - allows for depth buffer
-    */
+
     glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGB);
 
-    glutCreateWindow("First_Lab!");
+    glutCreateWindow("CSO-351");
 
-    //codes for initialization
+
     init();
 
-    //enable Depth Testing
     glEnable(GL_DEPTH_TEST);
 
-    //display callback function
+
     glutDisplayFunc(display);
 
     glutSpecialFunc(specialKeyListener);
 
-    //what you want to do in the idle time (when no drawing is occurring)
     glutIdleFunc(animate);
-    //The main loop of OpenGL
+
     glutMainLoop();
 
 
